@@ -63,7 +63,9 @@ public class MqttGateway {
             publish(topic, json);
             
             // Log sanitizado (sin exponer nodeId completo)
-            String sanitizedNodeId = nodeId.substring(0, Math.min(8, nodeId.length())) + "...";
+            String sanitizedNodeId = (nodeId != null && nodeId.length() > 8) 
+                ? nodeId.substring(0, 8) + "..." 
+                : "***";
             log.info("MQTT cmd publicado - nodeId={} zona={} accion={}", 
                 sanitizedNodeId, zona, accion);
         } catch (JsonProcessingException e) {

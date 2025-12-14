@@ -14,6 +14,7 @@ RETENTION_DAYS="${RETENTION_DAYS:-30}"
 CONTAINER_NAME="${POSTGRES_CONTAINER:-irrigacion-postgres}"
 DB_NAME="${POSTGRES_DB:-irrigacion}"
 DB_USER="${POSTGRES_USER:-postgres}"
+DB_HOST="${POSTGRES_HOST:-localhost}"
 
 # Crear directorio si no existe
 mkdir -p "$BACKUP_DIR"
@@ -40,7 +41,8 @@ fi
 
 # Crear backup
 echo "Iniciando backup de base de datos: $DB_NAME"
-if docker exec "$CONTAINER_NAME" pg_dump -U "$DB_USER" "$DB_NAME" | gzip > "$BACKUP_FILE"; then
+echo "Host: $DB_HOST, Usuario: $DB_USER"
+if docker exec "$CONTAINER_NAME" pg_dump -h "$DB_HOST" -U "$DB_USER" "$DB_NAME" | gzip > "$BACKUP_FILE"; then
     BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
     echo "✓ Backup completado: $BACKUP_FILE ($BACKUP_SIZE)"
     

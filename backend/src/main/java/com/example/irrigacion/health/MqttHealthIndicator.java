@@ -16,24 +16,26 @@ import java.util.Optional;
 @ConditionalOnProperty(prefix = "app.mqtt", name = "enabled", havingValue = "true")
 public class MqttHealthIndicator implements HealthIndicator {
     
-    private final Mqtt5BlockingClient mqttClient;
+    private final Optional<Mqtt5BlockingClient> mqttClient;
     private final MqttProperties mqttProperties;
     
     public MqttHealthIndicator(Optional<Mqtt5BlockingClient> mqttClient, MqttProperties mqttProperties) {
-        this.mqttClient = mqttClient.orElse(null);
+        this.mqttClient = mqttClient;
         this.mqttProperties = mqttProperties;
     }
     
     @Override
     public Health health() {
-        if (mqttClient == null) {
-            return Health.down()
+        return mqttClient
+            .map(client -> checkClientHealth(client))
+            .orElseGet(() -> Health.down()
                 .withDetail("mqtt", "Cliente MQTT no disponible")
-                .build();
-        }
-        
+                .build());
+    }
+    
+    private Health checkClientHealth(Mqtt5BlockingClient client) {
         try {
-            if (mqttClient.getState().isConnected()) {
+            if (client.getState().isConnected()) {
                 return Health.up()
                     .withDetail("mqtt", "Connected")
                     .withDetail("broker", mqttProperties.getHost() + ":" + mqttProperties.getPort())
