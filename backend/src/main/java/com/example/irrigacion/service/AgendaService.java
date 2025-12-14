@@ -74,6 +74,15 @@ public class AgendaService {
         List<Agenda> agendas = agendaRepository.findActiveByNodeAndZona(req.getNodeId(), req.getZona());
         LocalTime start = LocalTime.parse(req.getHoraInicio());
         LocalTime end = start.plusMinutes(req.getDuracionMin());
+        
+        // Validar que no cruza medianoche (simplificación para MVP)
+        if (end.isBefore(start)) {
+            throw new IllegalArgumentException(
+                "La programación cruza medianoche. Debe dividirse en dos agendas separadas."
+            );
+        }
+        
+        // Validar overlaps con otras agendas activas
         for (Agenda a : agendas) {
             if (a.getId().equals(req.getId())) {
                 continue; // misma agenda, se actualiza
@@ -83,7 +92,10 @@ public class AgendaService {
             boolean overlapDays = a.getDiasSemana().stream().anyMatch(req.getDiasSemana()::contains);
             boolean overlapTime = start.isBefore(aEnd) && end.isAfter(aStart);
             if (overlapDays && overlapTime) {
-                throw new IllegalArgumentException("Solape de agenda en zona " + req.getZona());
+                throw new IllegalArgumentException(
+                    String.format("Solape de agenda en zona %d. Conflicto con agenda %s (%s - %s)",
+                        req.getZona(), a.getId(), aStart, aEnd)
+                );
             }
         }
     }
